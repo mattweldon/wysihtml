@@ -5,11 +5,10 @@ wysihtml5.browser = (function() {
   var userAgent   = navigator.userAgent,
       testElement = document.createElement("div"),
       // Browser sniffing is unfortunately needed since some behaviors are impossible to feature detect
-      // We need to be extra careful about Microsoft as it shows increasing tendency of tainting its userAgent strings with false feathers
-      isGecko     = userAgent.indexOf("Gecko")        !== -1 && userAgent.indexOf("KHTML") === -1 && !isIE(),
-      isWebKit    = userAgent.indexOf("AppleWebKit/") !== -1 && !isIE(),
-      isChrome    = userAgent.indexOf("Chrome/")      !== -1 && !isIE(),
-      isOpera     = userAgent.indexOf("Opera/")       !== -1 && !isIE();
+      isGecko     = userAgent.indexOf("Gecko")        !== -1 && userAgent.indexOf("KHTML") === -1,
+      isWebKit    = userAgent.indexOf("AppleWebKit/") !== -1,
+      isChrome    = userAgent.indexOf("Chrome/")      !== -1,
+      isOpera     = userAgent.indexOf("Opera/")       !== -1;
 
   function iosVersion(userAgent) {
     return +((/ipad|iphone|ipod/.test(userAgent) && userAgent.match(/ os (\d+).+? like mac os x/)) || [undefined, 0])[1];
@@ -179,15 +178,14 @@ wysihtml5.browser = (function() {
      */
     supportsCommand: (function() {
       // Following commands are supported but contain bugs in some browsers
-      // TODO: investigate if some of these bugs can be tested without altering selection on page, instead of targeting browsers and versions directly
       var buggyCommands = {
         // formatBlock fails with some tags (eg. <blockquote>)
         "formatBlock":          isIE(10, "<="),
          // When inserting unordered or ordered lists in Firefox, Chrome or Safari, the current selection or line gets
          // converted into a list (<ul><li>...</li></ul>, <ol><li>...</li></ol>)
          // IE and Opera act a bit different here as they convert the entire content of the current block element into a list
-        "insertUnorderedList":  isIE(),
-        "insertOrderedList":    isIE()
+        "insertUnorderedList":  isIE(9, ">=") || isIE(12, "<="),
+        "insertOrderedList":    isIE(9, ">=")|| isIE(12, "<=")
       };
 
       // Firefox throws errors for queryCommandSupported, so we have to build up our own object of supported commands
@@ -344,11 +342,6 @@ wysihtml5.browser = (function() {
       return isIE();
     },
 
-    /* In IE when deleting with caret at the begining of LI, List get broken into half instead of merging the LI with previous */
-    hasLiDeletingProblem: function() {
-      return isIE();
-    },
-
     hasUndoInContextMenu: function() {
       return isGecko || isChrome || isOpera;
     },
@@ -382,12 +375,6 @@ wysihtml5.browser = (function() {
       return isWebKit;
     },
 
-    // In all webkit browsers there are some places where caret can not be placed at the end of blocks and directly before block level element
-    //   when startContainer is element.
-    hasCaretBlockElementIssue: function() {
-      return isWebKit;
-    },
-
     supportsMutationEvents: function() {
       return ("MutationEvent" in window);
     },
@@ -408,10 +395,6 @@ wysihtml5.browser = (function() {
         return ("styleFloat" in document.createElement("div").style) ? "styleFloat" : "cssFloat";
       }
       return key;
-    },
-
-    usesControlRanges: function() {
-      return document.body && "createControlRange" in document.body;
     }
   };
 })();

@@ -22,12 +22,7 @@
       is: {
         emptyTextNode: function(ignoreWhitespace) {
           var regx = ignoreWhitespace ? (/^\s*$/g) : (/^[\r\n]*$/g);
-          return node && node.nodeType === wysihtml5.TEXT_NODE && (regx).test(node.data);
-        },
-
-        // Returns if node is the rangy selection bookmark element (that must not be taken into account in most situatons and is removed on selection restoring)
-        rangyBookmark: function() {
-          return node && node.nodeType === 1 && node.classList.contains('rangySelectionBoundary');
+          return node.nodeType === wysihtml5.TEXT_NODE && (regx).test(node.data);
         },
 
         visible: function() {
@@ -39,20 +34,6 @@
             }
           }
           return isVisible;
-        },
-        lineBreak: function() {
-          return node && node.nodeType === 1 && node.nodeName === "BR";
-        },
-        block: function() {
-          return node && node.nodeType === 1 && node.ownerDocument.defaultView.getComputedStyle(node).display === "block";
-        },
-        // Void elements are elemens that can not have content
-        // In most cases browsers should solve the cases for you when you try to insert content into those,
-        //    but IE does not and it is not nice to do so anyway.
-        voidElement: function() {
-          return wysihtml5.dom.domNode(node).test({
-            query: wysihtml5.VOID_ELEMENTS
-          });
         }
       },
 
@@ -66,7 +47,6 @@
         }
 
         if (
-          wysihtml5.dom.domNode(prevNode).is.rangyBookmark() || // is Rangy temporary boomark element (bypass)
           (!wysihtml5.lang.array(types).contains(prevNode.nodeType)) || // nodeTypes check.
           (options && options.ignoreBlankTexts && wysihtml5.dom.domNode(prevNode).is.emptyTextNode(true)) // Blank text nodes bypassed if set
         ) {
@@ -86,7 +66,6 @@
         }
 
         if (
-          wysihtml5.dom.domNode(nextNode).is.rangyBookmark() || // is Rangy temporary boomark element (bypass)
           (!wysihtml5.lang.array(types).contains(nextNode.nodeType)) || // nodeTypes check.
           (options && options.ignoreBlankTexts && wysihtml5.dom.domNode(nextNode).is.emptyTextNode(true)) // blank text nodes bypassed if set
         ) {
@@ -210,29 +189,6 @@
         }
       },
 
-      transferContentTo: function(targetNode, removeOldWrapper) {
-        if (node.nodeType === 1) {
-          if (wysihtml5.dom.domNode(targetNode).is.voidElement() || targetNode.nodeType === 3) {
-            while (node.lastChild) {
-              targetNode.parentNode.insertBefore(node.lastChild, targetNode.nextSibling);
-            }
-          } else {
-            while (node.firstChild) {
-              targetNode.appendChild(node.firstChild);
-            }
-          }
-          if (removeOldWrapper) {
-            node.parentNode.removeChild(node);
-          }
-        } else if (node.nodeType === 3 || node.nodeType === 8){
-          if (wysihtml5.dom.domNode(targetNode).is.voidElement()) {
-            targetNode.parentNode.insertBefore(node, targetNode.nextSibling);
-          } else {
-            targetNode.appendChild(node);
-          }
-        }
-      },
-
       /*
         Tests a node against properties, and returns true if matches.
         Tests on principle that all properties defined must have at least one match.
@@ -271,7 +227,7 @@
           }
         }
 
-        if (properties.nodeName && node.nodeName.toLowerCase() !== properties.nodeName.toLowerCase()) {
+        if (properties.nodeName && node.nodeName !== properties.nodeName) {
           return false;
         }
 

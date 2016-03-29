@@ -140,9 +140,10 @@ if (wysihtml5.browser.supported()) {
       });
 
       happen.once(composerElement, {type: "paste"});
-      var pasteEvent = document.createEvent("Event");
-      pasteEvent.initEvent("paste", true, true);
-      that.editableArea.dispatchEvent(pasteEvent);
+      //Just to show that not happen.js is the source of error
+      var event = new Event('paste');
+      that.editableArea.dispatchEvent(event);
+      //QUnit.triggerEvent(composerElement, 'paste');
       
       setTimeout(function() { start(); }, 100);
     });
@@ -176,9 +177,10 @@ if (wysihtml5.browser.supported()) {
       });
 
       happen.once(composerElement, {type: "drop"});
-      var dropEvent = document.createEvent("Event");
-      dropEvent.initEvent("drop", true, true);
-      that.editableArea.dispatchEvent(dropEvent);
+      //Just to show that not happen.js is the source of error
+      var event = new Event('drop');
+      that.editableArea.dispatchEvent(event);
+      //QUnit.triggerEvent(composerElement, 'drop');
 
       setTimeout(function() { start(); }, 100);
     });

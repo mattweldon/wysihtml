@@ -38,19 +38,19 @@ wysihtml5.polyfills = function(win, doc) {
 
   // element.textContent polyfill.
   if (Object.defineProperty && Object.getOwnPropertyDescriptor && Object.getOwnPropertyDescriptor(win.Element.prototype, "textContent") && !Object.getOwnPropertyDescriptor(win.Element.prototype, "textContent").get) {
-    (function() {
-      var innerText = Object.getOwnPropertyDescriptor(win.Element.prototype, "innerText");
-      Object.defineProperty(win.Element.prototype, "textContent",
-        {
-          get: function() {
-            return innerText.get.call(this);
-          },
-          set: function(s) {
-            return innerText.set.call(this, s);
-          }
-        }
-      );
-    })();
+  	(function() {
+  		var innerText = Object.getOwnPropertyDescriptor(win.Element.prototype, "innerText");
+  		Object.defineProperty(win.Element.prototype, "textContent",
+  			{
+  				get: function() {
+  					return innerText.get.call(this);
+  				},
+  				set: function(s) {
+  					return innerText.set.call(this, s);
+  				}
+  			}
+  		);
+  	})();
   }
 
   // isArray polyfill for ie8
@@ -95,36 +95,20 @@ wysihtml5.polyfills = function(win, doc) {
     };
   }
 
-  // closest and matches polyfill
-  // https://github.com/jonathantneal/closest
-  (function (ELEMENT) {
-    ELEMENT.matches = ELEMENT.matches || ELEMENT.mozMatchesSelector || ELEMENT.msMatchesSelector || ELEMENT.oMatchesSelector || ELEMENT.webkitMatchesSelector || function matches(selector) {
-      var
-      element = this,
-      elements = (element.document || element.ownerDocument).querySelectorAll(selector),
-      index = 0;
-
-      while (elements[index] && elements[index] !== element) {
-        ++index;
-      }
-
-      return elements[index] ? true : false;
+  // Element.matches Adds ie8 support and unifies nonstandard function names in other browsers
+  win.Element && function(ElementPrototype) {
+    ElementPrototype.matches = ElementPrototype.matches ||
+    ElementPrototype.matchesSelector ||
+    ElementPrototype.mozMatchesSelector ||
+    ElementPrototype.msMatchesSelector ||
+    ElementPrototype.oMatchesSelector ||
+    ElementPrototype.webkitMatchesSelector ||
+    function (selector) {
+      var node = this, nodes = (node.parentNode || node.document).querySelectorAll(selector), i = -1;
+      while (nodes[++i] && nodes[i] != node);
+      return !!nodes[i];
     };
-
-    ELEMENT.closest = ELEMENT.closest || function closest(selector) {
-      var element = this;
-
-      while (element) {
-        if (element.matches(selector)) {
-          break;
-        }
-
-        element = element.parentElement;
-      }
-
-      return element;
-    };
-  }(Element.prototype));
+  }(win.Element.prototype);
 
   // Element.classList for ie8-9 (toggle all IE)
   // source http://purl.eligrey.com/github/classList.js/blob/master/classList.js
@@ -383,19 +367,7 @@ wysihtml5.polyfills = function(win, doc) {
     return all;
   };
 
-  var isInDom = function(node) {
-    var doc = node.ownerDocument,
-        n = node;
 
-    do {
-      if (n === doc) {
-        return true;
-      }
-      n = n.parentNode;
-    } while(n);
-
-    return false;
-  };
 
   var normalizeFix = function() {
     var f = Node.prototype.normalize;
@@ -456,7 +428,7 @@ wysihtml5.polyfills = function(win, doc) {
         aoffset = Array.prototype.indexOf.call(aelement.parentNode.childNodes, aelement);
       }
 
-      if (isInDom(this) && anode && anode.parentNode && fnode && fnode.parentNode) {
+      if (anode && anode.parentNode && fnode && fnode.parentNode) {
         r.setStart(anode, aoffset);
         r.setEnd(fnode, foffset);
         s.removeAllRanges();
@@ -478,31 +450,6 @@ wysihtml5.polyfills = function(win, doc) {
   } else {
     F();
   }
-
-  // CustomEvent for ie9 and up
-  function nativeCustomEventSupported() {
-    try {
-      var p = new CustomEvent('cat', {detail: {foo: 'bar'}});
-      return  'cat' === p.type && 'bar' === p.detail.foo;
-    } catch (e) {}
-    return false;
-  }
-  var customEventSupported = nativeCustomEventSupported();
-
-  // Polyfills CustomEvent object for IE9 and up
-  (function() {
-    if (!customEventSupported && "CustomEvent" in window) {
-      function CustomEvent(event, params) {
-        params = params || {bubbles: false, cancelable: false, detail: undefined};
-        var evt = doc.createEvent('CustomEvent');
-        evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
-        return evt;
-      }
-      CustomEvent.prototype = win.Event.prototype;
-      win.CustomEvent = CustomEvent;
-      customEventSupported = true;
-    }
-  })();
 };
 
 wysihtml5.polyfills(window, document);

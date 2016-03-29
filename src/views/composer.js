@@ -46,7 +46,7 @@
 
     cleanUp: function(rules) {
       var bookmark;
-      if (this.selection && this.selection.isInThisEditable()) {
+      if (this.selection) {
         bookmark = rangy.saveSelection(this.win);
       }
       this.parent.parse(this.element, undefined, rules);
@@ -218,8 +218,6 @@
           ]).from(this.textarea.element).to(this.element);
       }
 
-      this._initAutoLinking();
-
       dom.addClass(this.element, this.config.classNames.composer);
       //
       // Make the editor look like the original textarea, by syncing styles
@@ -252,6 +250,7 @@
       // Make sure that the browser avoids using inline styles whenever possible
       this.commands.exec("styleWithCSS", false);
 
+      this._initAutoLinking();
       this._initObjectResizing();
       this._initUndoManager();
       this._initLineBreaking();
@@ -285,7 +284,10 @@
           supportsAutoLinking            = browser.doesAutoLinkingInContentEditable();
 
       if (supportsDisablingOfAutoLinking) {
+        // I have no idea why IE edge deletes element content here when calling the command,
+        var tmpHTML = this.element.innerHTML;
         this.commands.exec("AutoUrlDetect", false, false);
+        this.element.innerHTML = tmpHTML;
       }
 
       if (!this.config.autoLink) {
@@ -409,11 +411,8 @@
       function adjust(selectedNode) {
         var parentElement = dom.getParentElement(selectedNode, { query: "p, div" }, 2);
         if (parentElement && dom.contains(that.element, parentElement)) {
-          that.selection.executeAndRestoreRangy(function() {
+          that.selection.executeAndRestore(function() {
             if (that.config.useLineBreaks) {
-              if (!parentElement.firstChild || (parentElement.firstChild === parentElement.lastChild && parentElement.firstChild.nodeType === 1 && parentElement.firstChild.classList.contains('rangySelectionBoundary'))) {
-                parentElement.appendChild(that.doc.createElement('br'));
-              }
               dom.replaceWithChildNodes(parentElement);
             } else if (parentElement.nodeName !== "P") {
               dom.renameElement(parentElement, "p");
@@ -422,21 +421,18 @@
         }
       }
 
-      // Ensures when editor is empty and not line breaks mode, the inital state has a paragraph in it on focus with caret inside paragraph
       if (!this.config.useLineBreaks) {
-        dom.observe(this.element, ["focus"], function() {
+        dom.observe(this.element, ["focus", "keydown"], function() {
           if (that.isEmpty()) {
-            setTimeout(function() {
-              var paragraph = that.doc.createElement("P");
-              that.element.innerHTML = "";
-              that.element.appendChild(paragraph);
-              if (!browser.displaysCaretInEmptyContentEditableCorrectly()) {
-                paragraph.innerHTML = "<br>";
-                that.selection.setBefore(paragraph.firstChild);
-              } else {
-                that.selection.selectNode(paragraph, true);
-              }
-            }, 0);
+            var paragraph = that.doc.createElement("P");
+            that.element.innerHTML = "";
+            that.element.appendChild(paragraph);
+            if (!browser.displaysCaretInEmptyContentEditableCorrectly()) {
+              paragraph.innerHTML = "<br>";
+              that.selection.setBefore(paragraph.firstChild);
+            } else {
+              that.selection.selectNode(paragraph, true);
+            }
           }
         });
       }
@@ -444,7 +440,7 @@
       dom.observe(this.element, "keydown", function(event) {
         var keyCode = event.keyCode;
 
-        if (event.shiftKey || event.ctrlKey || event.defaultPrevented) {
+        if (event.shiftKey) {
           return;
         }
 
@@ -476,9 +472,11 @@
           }, 0);
           return;
         }
+
         if (that.config.useLineBreaks && keyCode === wysihtml5.ENTER_KEY && !wysihtml5.browser.insertsLineBreaksOnReturn()) {
           event.preventDefault();
           that.commands.exec("insertLineBreak");
+
         }
       });
     }

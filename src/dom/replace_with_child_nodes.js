@@ -16,8 +16,15 @@ wysihtml5.dom.replaceWithChildNodes = function(node) {
     return;
   }
 
-  while (node.firstChild) {
-    node.parentNode.insertBefore(node.firstChild, node);
+  if (!node.firstChild) {
+    node.parentNode.removeChild(node);
+    return;
   }
-  node.parentNode.removeChild(node);
+
+  var fragment = node.ownerDocument.createDocumentFragment();
+  while (node.firstChild) {
+    fragment.appendChild(node.firstChild);
+  }
+  node.parentNode.replaceChild(fragment, node);
+  node = fragment = null;
 };
